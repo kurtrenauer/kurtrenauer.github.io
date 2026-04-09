@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Willkommen</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #0d1117;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #welcome-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #e6edf3;
+      font-size: 3rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 40px rgba(136, 198, 255, 0.3);
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="welcome-text">Willkommen</div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    const ball = {
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: 18,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 0.5) * 6,
+      hue: Math.random() * 360,
+    };
+
+    // Ensure the ball has a minimum speed
+    if (Math.abs(ball.vx) < 2) ball.vx = 2;
+    if (Math.abs(ball.vy) < 2) ball.vy = 2;
+
+    const trail = [];
+    const maxTrail = 50;
+
+    function update() {
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      // Bounce off edges
+      if (ball.x - ball.radius <= 0) {
+        ball.x = ball.radius;
+        ball.vx = Math.abs(ball.vx);
+        ball.hue = (ball.hue + 30) % 360;
+      }
+      if (ball.x + ball.radius >= width) {
+        ball.x = width - ball.radius;
+        ball.vx = -Math.abs(ball.vx);
+        ball.hue = (ball.hue + 30) % 360;
+      }
+      if (ball.y - ball.radius <= 0) {
+        ball.y = ball.radius;
+        ball.vy = Math.abs(ball.vy);
+        ball.hue = (ball.hue + 30) % 360;
+      }
+      if (ball.y + ball.radius >= height) {
+        ball.y = height - ball.radius;
+        ball.vy = -Math.abs(ball.vy);
+        ball.hue = (ball.hue + 30) % 360;
+      }
+
+      // Store trail positions
+      trail.push({ x: ball.x, y: ball.y, hue: ball.hue });
+      if (trail.length > maxTrail) {
+        trail.shift();
+      }
+
+      // Slowly shift hue over time
+      ball.hue = (ball.hue + 0.2) % 360;
+    }
+
+    function draw() {
+      // Semi-transparent background for fade effect
+      ctx.fillStyle = 'rgba(13, 17, 23, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw trail
+      for (let i = 0; i < trail.length; i++) {
+        const t = trail[i];
+        const alpha = (i / trail.length) * 0.6;
+        const radius = ball.radius * (i / trail.length) * 0.8;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${t.hue}, 80%, 60%, ${alpha})`;
+        ctx.fill();
+      }
+
+      // Draw ball with glow
+      ctx.save();
+      ctx.shadowColor = `hsla(${ball.hue}, 80%, 60%, 0.8)`;
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+
+      const gradient = ctx.createRadialGradient(
+        ball.x - ball.radius * 0.3,
+        ball.y - ball.radius * 0.3,
+        ball.radius * 0.1,
+        ball.x,
+        ball.y,
+        ball.radius
+      );
+      gradient.addColorStop(0, `hsla(${ball.hue}, 80%, 85%, 1)`);
+      gradient.addColorStop(0.5, `hsla(${ball.hue}, 80%, 60%, 1)`);
+      gradient.addColorStop(1, `hsla(${ball.hue}, 80%, 40%, 0.8)`);
+
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function animate() {
+      update();
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
