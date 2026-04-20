@@ -141,12 +141,31 @@
       radius: 18,
       vx: (Math.random() - 0.5) * 6,
       vy: (Math.random() - 0.5) * 6,
-      hue: Math.random() * 360,
+      t: Math.random(),
+      tDir: 1,
     };
 
     // Ensure the ball has a minimum speed
     if (Math.abs(ball.vx) < 2) ball.vx = 2;
     if (Math.abs(ball.vy) < 2) ball.vy = 2;
+
+    // Brand primary colors: white and light blue
+    const COLOR_A = [255, 255, 255]; // share = white
+    const COLOR_B = [136, 198, 255]; // lox   = light blue (#88c6ff)
+
+    function mix(a, b, t) {
+      // Smoothstep for a softer transition between the two colors
+      const s = t * t * (3 - 2 * t);
+      return [
+        Math.round(a[0] + (b[0] - a[0]) * s),
+        Math.round(a[1] + (b[1] - a[1]) * s),
+        Math.round(a[2] + (b[2] - a[2]) * s),
+      ];
+    }
+
+    function rgba([r, g, b], a) {
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
 
     const trail = [];
     const maxTrail = 50;
@@ -155,36 +174,38 @@
       ball.x += ball.vx;
       ball.y += ball.vy;
 
-      // Bounce off edges
+      // Bounce off edges; each impact flips the color-mix direction
       if (ball.x - ball.radius <= 0) {
         ball.x = ball.radius;
         ball.vx = Math.abs(ball.vx);
-        ball.hue = (ball.hue + 30) % 360;
+        ball.tDir *= -1;
       }
       if (ball.x + ball.radius >= width) {
         ball.x = width - ball.radius;
         ball.vx = -Math.abs(ball.vx);
-        ball.hue = (ball.hue + 30) % 360;
+        ball.tDir *= -1;
       }
       if (ball.y - ball.radius <= 0) {
         ball.y = ball.radius;
         ball.vy = Math.abs(ball.vy);
-        ball.hue = (ball.hue + 30) % 360;
+        ball.tDir *= -1;
       }
       if (ball.y + ball.radius >= height) {
         ball.y = height - ball.radius;
         ball.vy = -Math.abs(ball.vy);
-        ball.hue = (ball.hue + 30) % 360;
+        ball.tDir *= -1;
       }
 
+      // Oscillate the color-mix factor between 0 (white) and 1 (light blue)
+      ball.t += 0.008 * ball.tDir;
+      if (ball.t >= 1) { ball.t = 1; ball.tDir = -1; }
+      if (ball.t <= 0) { ball.t = 0; ball.tDir = 1; }
+
       // Store trail positions
-      trail.push({ x: ball.x, y: ball.y, hue: ball.hue });
+      trail.push({ x: ball.x, y: ball.y, t: ball.t });
       if (trail.length > maxTrail) {
         trail.shift();
       }
-
-      // Slowly shift hue over time
-      ball.hue = (ball.hue + 0.2) % 360;
     }
 
     function draw() {
@@ -194,18 +215,20 @@
 
       // Draw trail
       for (let i = 0; i < trail.length; i++) {
-        const t = trail[i];
+        const p = trail[i];
         const alpha = (i / trail.length) * 0.6;
         const radius = ball.radius * (i / trail.length) * 0.8;
         ctx.beginPath();
-        ctx.arc(t.x, t.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${t.hue}, 80%, 60%, ${alpha})`;
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(mix(COLOR_A, COLOR_B, p.t), alpha);
         ctx.fill();
       }
 
       // Draw ball with glow
+      const coreColor = mix(COLOR_A, COLOR_B, ball.t);
+
       ctx.save();
-      ctx.shadowColor = `hsla(${ball.hue}, 80%, 60%, 0.8)`;
+      ctx.shadowColor = rgba(coreColor, 0.8);
       ctx.shadowBlur = 30;
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -218,9 +241,12 @@
         ball.y,
         ball.radius
       );
-      gradient.addColorStop(0, `hsla(${ball.hue}, 80%, 85%, 1)`);
-      gradient.addColorStop(0.5, `hsla(${ball.hue}, 80%, 60%, 1)`);
-      gradient.addColorStop(1, `hsla(${ball.hue}, 80%, 40%, 0.8)`);
+      // Highlight toward white, outer edge toward light blue for depth
+      const highlight = mix(coreColor, COLOR_A, 0.7);
+      const outer = mix(coreColor, COLOR_B, 0.5);
+      gradient.addColorStop(0, rgba(highlight, 1));
+      gradient.addColorStop(0.5, rgba(coreColor, 1));
+      gradient.addColorStop(1, rgba(outer, 0.85));
 
       ctx.fillStyle = gradient;
       ctx.fill();
