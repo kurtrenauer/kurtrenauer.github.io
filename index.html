@@ -40,11 +40,39 @@
       top: 0;
       left: 0;
     }
+
+    #footer {
+      position: absolute;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+      font-size: 0.85rem;
+      color: #8b949e;
+      letter-spacing: 0.05em;
+    }
+
+    #footer a {
+      color: #8b949e;
+      text-decoration: none;
+      margin: 0 0.75rem;
+      transition: color 0.2s ease;
+    }
+
+    #footer a:hover {
+      color: #e6edf3;
+    }
   </style>
 </head>
 <body>
   <div id="welcome-text">Willkommen</div>
   <canvas id="canvas"></canvas>
+  <div id="footer">
+    <a href="impressum.html">Impressum</a>
+    <span>&middot;</span>
+    <a href="https://www.renauer.at/datenschutz" target="_blank" rel="noopener">Datenschutz</a>
+  </div>
 
   <script>
     const canvas = document.getElementById('canvas');
