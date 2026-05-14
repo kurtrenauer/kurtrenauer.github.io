@@ -13,7 +13,7 @@
 
     body {
       overflow: hidden;
-      background: #0d1117;
+      background: #000000;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       height: 100vh;
       width: 100vw;
@@ -141,7 +141,7 @@
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.fillStyle = '#0d1117';
+        ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, width, height);
       }
       resize();
@@ -171,63 +171,23 @@
         };
       }
 
-      var trail = [];
-      var maxTrail = 260;
       var lastTime = performance.now();
       var simTime = Math.random() * 1000;
-
-      var rgb = '136,198,255';
 
       function frame(now) {
         var dt = Math.min(0.05, (now - lastTime) / 1000);
         lastTime = now;
         simTime += dt;
 
-        ctx.fillStyle = 'rgba(13, 17, 23, 0.085)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.045)';
         ctx.fillRect(0, 0, width, height);
 
-        var subSteps = 3;
-        for (var i = 0; i < subSteps; i++) {
-          var t = simTime - (subSteps - 1 - i) * (dt / subSteps);
-          trail.push(pointAt(t));
-        }
-        while (trail.length > maxTrail) trail.shift();
+        var tip = pointAt(simTime);
 
-        if (trail.length >= 2) {
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-
-          var n = trail.length;
-          for (var i = 1; i < n; i++) {
-            var p0 = trail[i - 1];
-            var p1 = trail[i];
-            var k = i / (n - 1);
-            var alpha = Math.pow(k, 1.8);
-            var lw = 0.6 + k * 2.2;
-            ctx.strokeStyle = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
-            ctx.lineWidth = lw;
-            ctx.beginPath();
-            ctx.moveTo(p0.x, p0.y);
-            ctx.lineTo(p1.x, p1.y);
-            ctx.stroke();
-          }
-
-          var tip = trail[n - 1];
-          var glowR = 8;
-          var grad = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, glowR);
-          grad.addColorStop(0, 'rgba(' + rgb + ',0.9)');
-          grad.addColorStop(0.4, 'rgba(' + rgb + ',0.3)');
-          grad.addColorStop(1, 'rgba(' + rgb + ',0)');
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(tip.x, tip.y, glowR, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#88c6ff';
-          ctx.beginPath();
-          ctx.arc(tip.x, tip.y, 1.6, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.fillStyle = '#88c6ff';
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 3, 0, Math.PI * 2);
+        ctx.fill();
 
         requestAnimationFrame(frame);
       }
